@@ -4,6 +4,10 @@ from datetime import datetime
 import os
 import csv
 import io
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 from config import Config
 from models import db, User, Fixture, Prediction
@@ -22,6 +26,22 @@ with app.app_context():
 
 # Initialize API client
 api_client = LiveScoresAPIClient()
+
+def sync_fixtures_on_startup():
+    """Auto-sync World Cup fixtures on app startup if database is empty"""
+    with app.app_context():
+        fixture_count = Fixture.query.count()
+        if fixture_count == 0:
+            print("\n📥 Syncing World Cup 2026 fixtures...")
+            synced = api_client.fetch_and_sync_fixtures()
+            if synced > 0:
+                api_client.log_sync('fixtures', synced, status='success')
+                print(f"✅ Successfully synced {synced} World Cup 2026 fixtures!\n")
+            else:
+                print("⚠️  Could not sync fixtures. Try manual sync from Admin panel.\n")
+
+# Sync fixtures on startup
+sync_fixtures_on_startup()
 
 @app.before_request
 def set_current_user():
@@ -293,4 +313,4 @@ def server_error(error):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

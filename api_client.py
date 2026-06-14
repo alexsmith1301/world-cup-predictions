@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from models import Fixture, SyncLog, db
 from predictions import update_all_prediction_points_for_fixture
+from fixtures_fallback import WORLD_CUP_2026_FIXTURES
 
 class LiveScoresAPIClient:
     """Client for fetching World Cup 2026 fixtures and live scores"""
@@ -33,12 +34,12 @@ class LiveScoresAPIClient:
             return []
 
     def fetch_and_sync_fixtures(self):
-        """Fetch fixtures from API and sync to database"""
+        """Fetch fixtures from API and sync to database. Falls back to hardcoded fixtures if API fails."""
         try:
             fixtures_data = self.get_fixtures()
             if not fixtures_data:
-                print("No fixtures returned from API")
-                return 0
+                print("API returned no fixtures. Using fallback fixtures...")
+                return self.sync_fallback_fixtures()
 
             synced_count = 0
             for fixture_data in fixtures_data:
@@ -69,7 +70,32 @@ class LiveScoresAPIClient:
             return synced_count
 
         except Exception as e:
-            print(f"Error syncing fixtures: {e}")
+            print(f"Error syncing fixtures from API: {e}. Using fallback fixtures...")
+            return self.sync_fallback_fixtures()
+
+    def sync_fallback_fixtures(self):
+        """Load hardcoded World Cup 2026 fixtures as fallback"""
+        try:
+            synced_count = 0
+            for idx, fixture_data in enumerate(WORLD_CUP_2026_FIXTURES):
+                api_id = f"fallback_{idx}"
+
+                fixture = Fixture.query.filter_by(api_id=api_id).first()
+                if not fixture:
+                    fixture = Fixture(
+                        api_id=api_id,
+                        home_team=fixture_data['home_team'],
+                        away_team=fixture_data['away_team'],
+                        scheduled_datetime=fixture_data['scheduled_datetime'],
+                        status='not_started'
+                    )
+                    db.session.add(fixture)
+                    synced_count += 1
+
+            db.session.commit()
+            return synced_count
+        except Exception as e:
+            print(f"Error loading fallback fixtures: {e}")
             return 0
 
     def fetch_live_scores(self):
