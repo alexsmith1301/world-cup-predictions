@@ -10,10 +10,9 @@ class LiveScoresAPIClient:
 
     def __init__(self, api_key=None, api_url=None):
         self.api_key = api_key or os.environ.get('LIVE_SCORES_API_KEY')
-        self.api_url = api_url or os.environ.get('LIVE_SCORES_API_URL', 'https://api-football-v1.p.rapidapi.com')
+        self.api_url = api_url or os.environ.get('LIVE_SCORES_API_URL', 'https://v3.football.api-sports.io')
         self.headers = {
-            'X-RapidAPI-Key': self.api_key,
-            'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
+            'x-apisports-key': self.api_key
         }
         self.league_id = 1  # FIFA World Cup
         self.season = 2026
