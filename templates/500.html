@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <h1>500</h1>
+    <p>Server error</p>
+    <a href="{{ url_for('predictions') }}" class="btn btn-primary">← Back to Predictions</a>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - World Cup Predictions{% endblock %}
+
+{% block content %}
+<div class="leaderboard-page">
+    <h2>🏆 Leaderboard</h2>
+
+    {% if leaderboard %}
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Total Points</th>
+                <th>Predictions</th>
+                <th>Exact Score</th>
+                <th>Goal Diff</th>
+                <th>Result</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in leaderboard %}
+            <tr class="{% if entry.user.username == current_user.username %}current-user{% endif %}">
+                <td class="rank">
+                    {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                </td>
+                <td class="player-name">
+                    {{ entry.user.username }}
+                    {% if entry.user.username == current_user.username %}<span class="badge you">You</span>{% endif %}
+                </td>
+                <td class="total-points">
+                    <strong>{{ entry.total_points }}</strong>
+                </td>
+                <td class="predictions-count">
+                    {{ entry.predictions_completed }} / {{ entry.predictions_made }}
+                </td>
+                <td class="exact-count">
+                    <span class="count-badge">{{ entry.exact_correct }}</span>
+                </td>
+                <td class="diff-count">
+                    <span class="count-badge">{{ entry.diff_correct }}</span>
+                </td>
+                <td class="result-count">
+                    <span class="count-badge">{{ entry.result_correct }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="scoring-info">
+        <h3>Scoring System</h3>
+        <ul>
+            <li><strong>5 points</strong> - Correct exact score</li>
+            <li><strong>3 points</strong> - Correct goal difference</li>
+            <li><strong>2 points</strong> - Correct result (win/loss/draw)</li>
+        </ul>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p>No predictions made yet</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

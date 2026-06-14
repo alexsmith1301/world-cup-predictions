@@ -1,0 +1,792 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #2563eb;
+    --primary-dark: #1e40af;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-color: #1e293b;
+    --text-light: #64748b;
+    --radius: 8px;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ==================== Header & Navigation ====================*/
+
+header {
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+.title {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.username {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.logout-btn {
+    padding: 8px 16px;
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #dc2626;
+}
+
+/* Tabs Navigation */
+
+nav.tabs {
+    display: flex;
+    gap: 20px;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 12px 0;
+    text-decoration: none;
+    color: var(--text-light);
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.tab:hover {
+    color: var(--primary-color);
+}
+
+.tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* ==================== Flash Messages ====================*/
+
+.flash {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: var(--radius);
+    border-left: 4px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flash-success {
+    background-color: #ecfdf5;
+    border-color: var(--success-color);
+    color: #065f46;
+}
+
+.flash-error {
+    background-color: #fef2f2;
+    border-color: var(--danger-color);
+    color: #7f1d1d;
+}
+
+.close-flash {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: inherit;
+}
+
+/* ==================== Buttons ====================*/
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #475569;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.btn-tiny {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+/* ==================== Forms ====================*/
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ==================== Badges ====================*/
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: #dbeafe;
+    color: #0c4a6e;
+}
+
+.badge.completed {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.badge.in-progress {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge.you {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.count-badge {
+    display: inline-block;
+    min-width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* ==================== Content Area ====================*/
+
+.content {
+    flex: 1;
+    padding: 20px 0;
+}
+
+/* ==================== Login Page ====================*/
+
+.login-page {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.login-box {
+    background-color: var(--card-bg);
+    padding: 40px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+}
+
+.login-box h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 32px;
+    color: var(--primary-color);
+}
+
+.login-box h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 20px;
+    color: var(--text-light);
+}
+
+.login-box form {
+    margin-bottom: 20px;
+}
+
+.login-box button {
+    width: 100%;
+}
+
+.hint {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 20px;
+}
+
+/* ==================== Predictions Page ====================*/
+
+.predictions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.date-group {
+    margin-bottom: 30px;
+}
+
+.date-header {
+    padding: 12px 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-color);
+    font-size: 18px;
+}
+
+.fixture-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+}
+
+.fixture-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.fixture-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.teams {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.team {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.team.home {
+    text-align: right;
+    flex: 1;
+}
+
+.team.away {
+    text-align: left;
+    flex: 1;
+}
+
+.vs {
+    color: var(--text-light);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.time {
+    color: var(--text-light);
+    font-size: 14px;
+    min-width: 60px;
+    text-align: right;
+}
+
+.fixture-status {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.live-score {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.score {
+    font-size: 36px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.prediction-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin: 15px 0;
+}
+
+.score-inputs {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-group input {
+    width: 60px;
+    padding: 8px;
+    text-align: center;
+}
+
+.input-group .dash {
+    color: var(--text-light);
+    font-weight: bold;
+}
+
+.prediction-status {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 10px;
+}
+
+.prediction-locked {
+    background-color: #fef3c7;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    padding: 12px;
+    border-radius: var(--radius);
+    margin: 12px 0;
+    text-align: center;
+}
+
+.result-comparison {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 12px;
+}
+
+.comparison-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comparison-item:last-child {
+    border-bottom: none;
+}
+
+.comparison-item.points {
+    background-color: #ecfdf5;
+    margin: 8px 0;
+    padding: 8px;
+    border-radius: var(--radius);
+}
+
+.comparison-item .label {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.comparison-item .prediction,
+.comparison-item .result {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.comparison-item .points-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--success-color);
+}
+
+.comparison-item .breakdown {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-left: 8px;
+}
+
+.no-prediction {
+    color: var(--text-light);
+    font-style: italic;
+    padding: 12px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+/* ==================== Leaderboard Page ====================*/
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--card-bg);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.leaderboard-table thead {
+    background-color: var(--bg-color);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.leaderboard-table th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.leaderboard-table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.leaderboard-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.leaderboard-table tr.current-user {
+    background-color: #f0f9ff;
+}
+
+.rank {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    min-width: 40px;
+}
+
+.player-name {
+    font-weight: 600;
+}
+
+.total-points {
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.scoring-info {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 30px;
+}
+
+.scoring-info h3 {
+    margin-bottom: 15px;
+}
+
+.scoring-info ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.scoring-info li {
+    padding: 8px 0;
+    color: var(--text-color);
+}
+
+/* ==================== Admin Page ====================*/
+
+.admin-section {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+.admin-section h3 {
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+.sync-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.fixtures-table,
+.predictions-table,
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fixtures-table thead,
+.predictions-table thead,
+.users-table thead {
+    background-color: var(--bg-color);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.fixtures-table th,
+.predictions-table th,
+.users-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.fixtures-table td,
+.predictions-table td,
+.users-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.fixtures-table tbody tr:hover,
+.predictions-table tbody tr:hover,
+.users-table tbody tr:hover {
+    background-color: var(--bg-color);
+}
+
+/* ==================== Error Page ====================*/
+
+.error-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.error-page h1 {
+    font-size: 72px;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.error-page p {
+    font-size: 18px;
+    color: var(--text-light);
+    margin-bottom: 30px;
+}
+
+/* ==================== Footer ====================*/
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-light);
+    border-top: 1px solid var(--border-color);
+    margin-top: 40px;
+    font-size: 14px;
+}
+
+footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* ==================== Responsive ====================*/
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .user-info {
+        align-self: flex-end;
+    }
+
+    nav.tabs {
+        flex-wrap: wrap;
+    }
+
+    .prediction-form {
+        flex-direction: column;
+    }
+
+    .score-inputs {
+        width: 100%;
+    }
+
+    .input-group input {
+        flex: 1;
+    }
+
+    .leaderboard-table {
+        font-size: 13px;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: 10px;
+    }
+
+    .sync-buttons {
+        flex-direction: column;
+    }
+
+    .sync-buttons .btn {
+        width: 100%;
+    }
+
+    .fixture-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .teams {
+        width: 100%;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .team.home,
+    .team.away {
+        text-align: left;
+    }
+
+    .time {
+        width: 100%;
+        text-align: left;
+    }
+}

@@ -1,0 +1,141 @@
+import requests
+import os
+from datetime import datetime
+from models import Fixture, SyncLog, db
+from predictions import update_all_prediction_points_for_fixture
+
+class LiveScoresAPIClient:
+    """Client for fetching World Cup 2026 fixtures and live scores"""
+
+    def __init__(self, api_key=None, api_url=None):
+        self.api_key = api_key or os.environ.get('LIVE_SCORES_API_KEY')
+        self.api_url = api_url or os.environ.get('LIVE_SCORES_API_URL', 'https://api-football-v1.p.rapidapi.com')
+        self.headers = {
+            'X-RapidAPI-Key': self.api_key,
+            'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
+        }
+        self.league_id = 1  # FIFA World Cup
+        self.season = 2026
+
+    def get_fixtures(self):
+        """Fetch all World Cup 2026 fixtures from API"""
+        try:
+            url = f"{self.api_url}/fixtures"
+            params = {
+                'league': self.league_id,
+                'season': self.season
+            }
+            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response.raise_for_status()
+            return response.json().get('response', [])
+        except Exception as e:
+            print(f"Error fetching fixtures from API: {e}")
+            return []
+
+    def fetch_and_sync_fixtures(self):
+        """Fetch fixtures from API and sync to database"""
+        try:
+            fixtures_data = self.get_fixtures()
+            if not fixtures_data:
+                print("No fixtures returned from API")
+                return 0
+
+            synced_count = 0
+            for fixture_data in fixtures_data:
+                api_id = str(fixture_data.get('fixture', {}).get('id'))
+                home_team = fixture_data.get('teams', {}).get('home', {}).get('name', 'Unknown')
+                away_team = fixture_data.get('teams', {}).get('away', {}).get('name', 'Unknown')
+
+                try:
+                    scheduled_datetime = datetime.fromisoformat(
+                        fixture_data.get('fixture', {}).get('date', '').replace('Z', '+00:00')
+                    )
+                except:
+                    continue
+
+                fixture = Fixture.query.filter_by(api_id=api_id).first()
+                if not fixture:
+                    fixture = Fixture(
+                        api_id=api_id,
+                        home_team=home_team,
+                        away_team=away_team,
+                        scheduled_datetime=scheduled_datetime,
+                        status='not_started'
+                    )
+                    db.session.add(fixture)
+                    synced_count += 1
+
+            db.session.commit()
+            return synced_count
+
+        except Exception as e:
+            print(f"Error syncing fixtures: {e}")
+            return 0
+
+    def fetch_live_scores(self):
+        """Fetch live scores and update fixture results"""
+        try:
+            fixtures_data = self.get_fixtures()
+            if not fixtures_data:
+                return 0
+
+            updated_count = 0
+            for fixture_data in fixtures_data:
+                api_id = str(fixture_data.get('fixture', {}).get('id'))
+                fixture = Fixture.query.filter_by(api_id=api_id).first()
+
+                if not fixture:
+                    continue
+
+                # Update fixture status and scores
+                fixture_status = fixture_data.get('fixture', {}).get('status', {})
+                status_code = fixture_status.get('short', '')
+
+                if status_code in ['NS', 'PST']:
+                    new_status = 'not_started'
+                elif status_code in ['1H', '2H', 'HT', 'BR', 'P']:
+                    new_status = 'in_progress'
+                elif status_code in ['FT', 'ET', 'PEN', 'AET']:
+                    new_status = 'completed'
+                else:
+                    new_status = fixture.status
+
+                # Update scores if they exist
+                goals = fixture_data.get('goals', {})
+                home_score = goals.get('home')
+                away_score = goals.get('away')
+
+                if home_score is not None and away_score is not None:
+                    if (fixture.home_score != home_score or
+                        fixture.away_score != away_score or
+                        fixture.status != new_status):
+                        fixture.home_score = home_score
+                        fixture.away_score = away_score
+                        fixture.status = new_status
+                        fixture.last_updated = datetime.utcnow()
+                        updated_count += 1
+
+                        # Calculate points if fixture just completed
+                        if new_status == 'completed' and fixture.status != 'completed':
+                            update_all_prediction_points_for_fixture(fixture)
+
+            db.session.commit()
+            return updated_count
+
+        except Exception as e:
+            print(f"Error fetching live scores: {e}")
+            return 0
+
+    def log_sync(self, sync_type, fixtures_updated, status='success', error_message=None):
+        """Log a sync operation"""
+        try:
+            log = SyncLog(
+                sync_type=sync_type,
+                fixtures_updated=fixtures_updated,
+                status=status,
+                error_message=error_message
+            )
+            db.session.add(log)
+            db.session.commit()
+        except Exception as e:
+            print(f"Error logging sync: {e}")
