@@ -3,23 +3,21 @@ from datetime import datetime
 
 def _run_migrations(app):
     """Add new columns to existing tables (safe to run on every startup)."""
+    migrations = [
+        'ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(30)',
+        'ALTER TABLE fixtures ADD COLUMN result_notification_sent BOOLEAN DEFAULT FALSE',
+        'ALTER TABLE fixtures ADD COLUMN kickoff_reminder_sent BOOLEAN DEFAULT FALSE',
+    ]
     with app.app_context():
-        with db.engine.connect() as conn:
-            try:
-                conn.execute(db.text('ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(30)'))
-                conn.commit()
-            except Exception:
-                pass  # Column already exists
-            try:
-                conn.execute(db.text('ALTER TABLE fixtures ADD COLUMN result_notification_sent BOOLEAN DEFAULT 0'))
-                conn.commit()
-            except Exception:
-                pass  # Column already exists
-            try:
-                conn.execute(db.text('ALTER TABLE fixtures ADD COLUMN kickoff_reminder_sent BOOLEAN DEFAULT 0'))
-                conn.commit()
-            except Exception:
-                pass  # Column already exists
+        # Use a separate connection per statement so a failed ALTER TABLE
+        # (column already exists) doesn't abort subsequent migrations.
+        for stmt in migrations:
+            with db.engine.connect() as conn:
+                try:
+                    conn.execute(db.text(stmt))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
 
 def init_db(app):
     """Initialize the database"""
