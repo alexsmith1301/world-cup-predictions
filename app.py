@@ -380,21 +380,20 @@ def send_kickoff_reminders():
     from whatsapp import send_whatsapp
 
     now = datetime.utcnow()
-    # Find upcoming fixtures in the next 3 hours that haven't had a reminder sent
+    # Manual trigger: no flag filter — always attempts send for fixtures in next 3 hours
     fixtures = (
         F.query
         .filter(
             F.scheduled_datetime >= now,
             F.scheduled_datetime <= now + timedelta(hours=3),
             F.status == 'not_started',
-            F.kickoff_reminder_sent == False,
         )
         .order_by(F.scheduled_datetime)
         .all()
     )
 
     if not fixtures:
-        flash('No upcoming fixtures needing a reminder in the next 3 hours', 'error')
+        flash('No upcoming fixtures in the next 3 hours', 'error')
         return redirect(url_for('admin'))
 
     wa_users = U.query.filter(U.whatsapp_number.isnot(None)).all()
@@ -403,8 +402,10 @@ def send_kickoff_reminders():
         return redirect(url_for('admin'))
 
     sent = 0
+    errors = 0
     for f in fixtures:
         kickoff_bst = (f.scheduled_datetime + timedelta(hours=1)).strftime('%H:%M BST')
+        fixture_errors = 0
         for u in wa_users:
             pred = P.query.filter_by(user_id=u.id, fixture_id=f.id).first()
             if pred:
@@ -424,11 +425,16 @@ def send_kickoff_reminders():
                 sent += 1
             except Exception as e:
                 flash(f'Failed to send to {u.username}: {e}', 'error')
+                fixture_errors += 1
+                errors += 1
 
-        f.kickoff_reminder_sent = True
-        db.session.commit()
+        # Only mark sent if all sends for this fixture succeeded
+        if fixture_errors == 0:
+            f.kickoff_reminder_sent = True
+            db.session.commit()
 
-    flash(f'Sent {sent} kickoff reminder{"s" if sent != 1 else ""}', 'success')
+    if sent:
+        flash(f'Sent {sent} kickoff reminder{"s" if sent != 1 else ""}', 'success')
     return redirect(url_for('admin'))
 
 
