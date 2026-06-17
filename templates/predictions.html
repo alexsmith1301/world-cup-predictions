@@ -71,34 +71,33 @@
                 {% endif %}
 
                 {% else %}
-                <div class="prediction-locked">
-                    ⏱️ Predictions locked - Match has started
-                </div>
 
-                {% if user_prediction %}
+                {% set opponents = opponent_predictions.get(fixture.id, []) %}
                 <div class="result-comparison">
-                    <div class="comparison-item">
-                        <span class="label">Your Prediction:</span>
-                        <span class="prediction">{{ user_prediction.predicted_home_score }}-{{ user_prediction.predicted_away_score }}</span>
+                    <div class="comparison-row">
+                        <span class="comp-label">You</span>
+                        {% if user_prediction %}
+                        <span class="comp-score">{{ user_prediction.predicted_home_score }}-{{ user_prediction.predicted_away_score }}</span>
+                        {% else %}
+                        <span class="comp-score no-pred">—</span>
+                        {% endif %}
                     </div>
-                    {% if fixture.status == 'completed' %}
-                    <div class="comparison-item">
-                        <span class="label">Actual Result:</span>
-                        <span class="result">{{ fixture.home_score }}-{{ fixture.away_score }}</span>
+                    {% for opp in opponents %}
+                    <div class="comparison-row">
+                        <span class="comp-label">{{ opp.user.username }}</span>
+                        <span class="comp-score">{{ opp.predicted_home_score }}-{{ opp.predicted_away_score }}</span>
                     </div>
-                    {% if user_prediction.points_earned is not none %}
-                    <div class="comparison-item points">
-                        <span class="label">Points Earned:</span>
-                        <span class="points-value">{{ user_prediction.points_earned }}</span>
-                        {% set breakdown = user_prediction.get_points_breakdown() %}
-                        <span class="breakdown">({% if breakdown.exact %}Exact: 5{% elif breakdown.diff %}Goal Diff: 3{% elif breakdown.result %}Result: 2{% else %}No Match{% endif %})</span>
+                    {% endfor %}
+                    {% if fixture.status == 'completed' and user_prediction and user_prediction.points_earned is not none %}
+                    <div class="comparison-row points-row">
+                        <span class="comp-label">Points</span>
+                        <span class="comp-score points-value">{{ user_prediction.points_earned }}
+                            {% set breakdown = user_prediction.get_points_breakdown() %}
+                            <span class="breakdown">({% if breakdown.exact %}exact{% elif breakdown.diff %}goal diff{% elif breakdown.result %}result{% else %}none{% endif %})</span>
+                        </span>
                     </div>
-                    {% endif %}
                     {% endif %}
                 </div>
-                {% else %}
-                <p class="no-prediction">No prediction made for this fixture</p>
-                {% endif %}
 
                 {% endif %}
             </div>
@@ -113,9 +112,43 @@
 </div>
 
 <style>
-    .fixture-card.locked .prediction-form {
-        opacity: 0.5;
-        pointer-events: none;
+    .result-comparison {
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .comparison-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9em;
+    }
+
+    .comp-label {
+        color: #888;
+        min-width: 80px;
+        font-size: 0.85em;
+    }
+
+    .comp-score {
+        font-weight: 600;
+    }
+
+    .comp-score.no-pred {
+        color: #bbb;
+        font-weight: normal;
+    }
+
+    .points-row .comp-score {
+        color: #2a9d2a;
+    }
+
+    .breakdown {
+        font-size: 0.8em;
+        color: #888;
+        font-weight: normal;
     }
 </style>
 {% endblock %}

@@ -1,10 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from functools import wraps
 from datetime import datetime
+import logging
 import os
 import csv
 import io
 from dotenv import load_dotenv
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(name)s %(levelname)s %(message)s',
+)
 
 # Load .env file
 load_dotenv()
@@ -28,10 +34,10 @@ with app.app_context():
 api_client = LiveScoresAPIClient()
 
 def sync_fixtures_on_startup():
-    """Auto-sync World Cup fixtures on app startup if database is empty"""
+    """Auto-sync World Cup fixtures on app startup if database has no real API fixtures"""
     with app.app_context():
-        fixture_count = Fixture.query.count()
-        if fixture_count == 0:
+        real_count = Fixture.query.filter(~Fixture.api_id.like('fallback_%')).count()
+        if real_count == 0:
             print("\n📥 Syncing World Cup 2026 fixtures...")
             synced = api_client.fetch_and_sync_fixtures()
             if synced > 0:
@@ -136,6 +142,11 @@ def predictions():
     # Get user's predictions
     user_predictions = {p.fixture_id: p for p in Prediction.query.filter_by(user_id=user.id).all()}
 
+    # Get all other users' predictions keyed by fixture_id
+    opponent_predictions = {}
+    for p in Prediction.query.filter(Prediction.user_id != user.id).all():
+        opponent_predictions.setdefault(p.fixture_id, []).append(p)
+
     # Organize fixtures by date
     fixtures_by_date = {}
     for fixture in fixtures:
@@ -148,6 +159,7 @@ def predictions():
         'predictions.html',
         fixtures_by_date=fixtures_by_date,
         user_predictions=user_predictions,
+        opponent_predictions=opponent_predictions,
         user=user
     )
 
@@ -166,7 +178,7 @@ def leaderboard():
 def admin():
     # Simple check - only allow if user is one of the main users (could be expanded)
     user = get_current_user()
-    if user.username not in ['Alex', 'Phoebe']:
+    if user.username not in ['Alex']:
         flash('Access denied', 'error')
         return redirect(url_for('leaderboard'))
 
@@ -191,7 +203,7 @@ def admin():
 @login_required
 def sync_fixtures():
     user = get_current_user()
-    if user.username not in ['Alex', 'Phoebe']:
+    if user.username not in ['Alex']:
         return jsonify({'error': 'Access denied'}), 403
 
     count = api_client.fetch_and_sync_fixtures()
@@ -203,7 +215,7 @@ def sync_fixtures():
 @login_required
 def sync_results():
     user = get_current_user()
-    if user.username not in ['Alex', 'Phoebe']:
+    if user.username not in ['Alex']:
         return jsonify({'error': 'Access denied'}), 403
 
     count = api_client.fetch_live_scores()
@@ -211,11 +223,70 @@ def sync_results():
     flash(f'Updated {count} fixtures with live scores', 'success')
     return redirect(url_for('admin'))
 
+@app.route('/admin/add-prediction', methods=['POST'])
+@login_required
+def admin_add_prediction():
+    user = get_current_user()
+    if user.username not in ['Alex']:
+        return jsonify({'error': 'Access denied'}), 403
+
+    from predictions import update_prediction_points
+
+    user_ids = request.form.getlist('user_id[]')
+    fixture_ids = request.form.getlist('fixture_id[]')
+    home_scores = request.form.getlist('home_score[]')
+    away_scores = request.form.getlist('away_score[]')
+
+    saved = 0
+    errors = []
+    for i, (uid, fid, hs, aws) in enumerate(zip(user_ids, fixture_ids, home_scores, away_scores), start=1):
+        try:
+            uid, fid, hs, aws = int(uid), int(fid), int(hs), int(aws)
+        except (ValueError, TypeError):
+            errors.append(f'Row {i}: invalid input')
+            continue
+
+        fixture = Fixture.query.get(fid)
+        target_user = User.query.get(uid)
+        if not fixture or not target_user:
+            errors.append(f'Row {i}: user or fixture not found')
+            continue
+
+        prediction = Prediction.query.filter_by(user_id=uid, fixture_id=fid).first()
+        if prediction:
+            prediction.predicted_home_score = hs
+            prediction.predicted_away_score = aws
+            prediction.predicted_at = datetime.utcnow()
+        else:
+            prediction = Prediction(
+                user_id=uid,
+                fixture_id=fid,
+                predicted_home_score=hs,
+                predicted_away_score=aws,
+            )
+            db.session.add(prediction)
+
+        db.session.flush()
+
+        if fixture.status == 'completed':
+            update_prediction_points(prediction)
+
+        saved += 1
+
+    db.session.commit()
+
+    if saved:
+        flash(f'Saved {saved} prediction{"s" if saved != 1 else ""}', 'success')
+    for msg in errors:
+        flash(msg, 'error')
+
+    return redirect(url_for('admin'))
+
 @app.route('/admin/delete-prediction/<int:prediction_id>', methods=['POST'])
 @login_required
 def delete_prediction(prediction_id):
     user = get_current_user()
-    if user.username not in ['Alex', 'Phoebe']:
+    if user.username not in ['Alex']:
         return jsonify({'error': 'Access denied'}), 403
 
     prediction = Prediction.query.get(prediction_id)
@@ -231,7 +302,7 @@ def delete_prediction(prediction_id):
 @login_required
 def set_score(fixture_id):
     user = get_current_user()
-    if user.username not in ['Alex', 'Phoebe']:
+    if user.username not in ['Alex']:
         return jsonify({'error': 'Access denied'}), 403
 
     fixture = Fixture.query.get(fixture_id)
@@ -262,7 +333,7 @@ def set_score(fixture_id):
 @login_required
 def export_csv():
     user = get_current_user()
-    if user.username not in ['Alex', 'Phoebe']:
+    if user.username not in ['Alex']:
         return jsonify({'error': 'Access denied'}), 403
 
     output = io.StringIO()

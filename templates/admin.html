@@ -65,6 +65,50 @@
     </div>
 
     <div class="admin-section">
+        <h3>Add Backdated Predictions</h3>
+        <form method="POST" action="{{ url_for('admin_add_prediction') }}" id="backdate-form">
+            <table class="backdate-table" id="backdate-rows">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Match</th>
+                        <th colspan="3">Predicted Score</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="backdate-tbody">
+                    <tr class="backdate-row">
+                        <td>
+                            <select name="user_id[]" required>
+                                <option value="">— Player —</option>
+                                {% for u in users | sort(attribute='username') %}
+                                <option value="{{ u.id }}">{{ u.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="fixture_id[]" required>
+                                <option value="">— Match —</option>
+                                {% for fixture in fixtures | sort(attribute='scheduled_datetime') %}
+                                <option value="{{ fixture.id }}">{{ fixture.home_team }} vs {{ fixture.away_team }} ({{ fixture.scheduled_datetime.strftime('%d %b') }}{% if fixture.home_score is not none %} · {{ fixture.home_score }}-{{ fixture.away_score }}{% endif %})</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" name="home_score[]" min="0" max="99" placeholder="H" required></td>
+                        <td class="score-sep">-</td>
+                        <td><input type="number" name="away_score[]" min="0" max="99" placeholder="A" required></td>
+                        <td><button type="button" class="btn btn-tiny btn-danger remove-row" onclick="removeRow(this)">✕</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="backdate-actions">
+                <button type="button" class="btn btn-secondary" onclick="addRow()">+ Add Row</button>
+                <button type="submit" class="btn btn-primary">Save All</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-section">
         <h3>Predictions Management</h3>
         {% if predictions %}
         <table class="predictions-table">
@@ -73,6 +117,7 @@
                     <th>Player</th>
                     <th>Fixture</th>
                     <th>Prediction</th>
+                    <th>Opponent</th>
                     <th>Actual</th>
                     <th>Points</th>
                     <th>Action</th>
@@ -80,10 +125,19 @@
             </thead>
             <tbody>
                 {% for prediction in predictions | sort(attribute='predicted_at', reverse=True) %}
+                {% set opponent = prediction.fixture.predictions | rejectattr('user_id', 'equalto', prediction.user_id) | first %}
                 <tr>
                     <td>{{ prediction.user.username }}</td>
                     <td>{{ prediction.fixture.home_team }} vs {{ prediction.fixture.away_team }}</td>
                     <td>{{ prediction.predicted_home_score }}-{{ prediction.predicted_away_score }}</td>
+                    <td>
+                        {% if opponent %}
+                            {{ opponent.predicted_home_score }}-{{ opponent.predicted_away_score }}
+                            <span class="opponent-name">({{ opponent.user.username }})</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>
                         {% if prediction.fixture.home_score is not none %}
                             {{ prediction.fixture.home_score }}-{{ prediction.fixture.away_score }}
@@ -91,7 +145,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td>{{ prediction.points_earned or 'pending' }}</td>
+                    <td>{{ prediction.points_earned if prediction.points_earned is not none else 'pending' }}</td>
                     <td>
                         <form method="POST" action="{{ url_for('delete_prediction', prediction_id=prediction.id) }}" class="inline-form">
                             <button type="submit" class="btn btn-tiny btn-danger" onclick="return confirm('Delete this prediction?');">🗑️ Delete</button>
@@ -130,6 +184,56 @@
 </div>
 
 <style>
+    .backdate-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+
+    .backdate-table th {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 2px solid #ddd;
+        font-size: 0.85em;
+        color: #555;
+    }
+
+    .backdate-table td {
+        padding: 5px 6px;
+        vertical-align: middle;
+    }
+
+    .backdate-table select {
+        padding: 5px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%;
+    }
+
+    .backdate-table input[type="number"] {
+        width: 50px;
+        padding: 5px;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .score-sep {
+        text-align: center;
+        width: 12px;
+        padding: 0 2px;
+    }
+
+    .backdate-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .opponent-name {
+        font-size: 0.8em;
+        color: #888;
+    }
+
     .inline-score-form {
         display: flex;
         gap: 4px;
@@ -142,4 +246,21 @@
         text-align: center;
     }
 </style>
+
+<script>
+    function addRow() {
+        const tbody = document.getElementById('backdate-tbody');
+        const original = tbody.querySelector('.backdate-row');
+        const clone = original.cloneNode(true);
+        clone.querySelectorAll('select, input').forEach(el => el.value = '');
+        tbody.appendChild(clone);
+    }
+
+    function removeRow(btn) {
+        const tbody = document.getElementById('backdate-tbody');
+        if (tbody.querySelectorAll('.backdate-row').length > 1) {
+            btn.closest('.backdate-row').remove();
+        }
+    }
+</script>
 {% endblock %}

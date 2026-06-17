@@ -14,7 +14,7 @@ class Config:
 
     # API Configuration
     LIVE_SCORES_API_KEY = os.environ.get('LIVE_SCORES_API_KEY', '')
-    LIVE_SCORES_API_URL = os.environ.get('LIVE_SCORES_API_URL', 'https://v3.football.api-sports.io')
+    LIVE_SCORES_API_URL = os.environ.get('LIVE_SCORES_API_URL', 'https://api.zafronix.com/fifa/worldcup/v1')
 
     # Sync configuration
     FIXTURES_SYNC_INTERVAL = 3600  # 1 hour in seconds
