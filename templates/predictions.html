@@ -3,152 +3,134 @@
 {% block title %}Predictions & Results - World Cup Predictions{% endblock %}
 
 {% block content %}
-<div class="predictions-page">
-    <div class="predictions-header">
-        <h2>Predictions & Results</h2>
-        <form method="POST" action="{{ url_for('sync_results') }}" class="inline-form">
-            <button type="submit" class="btn btn-small">🔄 Refresh Live Scores</button>
-        </form>
-    </div>
+<div class="predictions-layout">
 
-    {% if fixtures_by_date %}
-        {% for date, fixtures in fixtures_by_date.items() | sort %}
-        <div class="date-group">
-            <h3 class="date-header">{{ date }}</h3>
+    <!-- Left: fixtures -->
+    <div class="fixtures-col">
+        <div class="col-header">
+            <h2>Predictions &amp; Results</h2>
+            <form method="POST" action="{{ url_for('sync_results') }}" class="inline-form">
+                <button type="submit" class="btn btn-small">🔄 Sync</button>
+            </form>
+        </div>
 
-            {% for fixture in fixtures %}
-            <div class="fixture-card {% if fixture.is_kickoff_passed() %}locked{% endif %}">
-                <div class="fixture-header">
-                    <div class="teams">
-                        <span class="team home">{{ fixture.home_team }}</span>
-                        <span class="vs">vs</span>
-                        <span class="team away">{{ fixture.away_team }}</span>
+        {% if fixtures_by_date %}
+            {% for date, fixtures in fixtures_by_date.items() | sort %}
+            <div class="date-group">
+                <h3 class="date-header">{{ date }}</h3>
+
+                {% for fixture in fixtures %}
+                <div class="fixture-card {% if fixture.is_kickoff_passed() %}locked{% endif %}">
+
+                    <div class="fixture-row">
+                        <div class="teams">
+                            <span class="team home">{{ fixture.home_team }}</span>
+                            <span class="vs">vs</span>
+                            <span class="team away">{{ fixture.away_team }}</span>
+                        </div>
+                        <div class="fixture-meta">
+                            <span class="time">{{ fixture.scheduled_datetime.strftime('%H:%M') }}</span>
+                            <span class="badge {% if fixture.status == 'completed' %}completed{% elif fixture.status == 'in_progress' %}in-progress{% endif %}">
+                                {% if fixture.status == 'completed' %}✓{% elif fixture.status == 'in_progress' %}🔴{% else %}🔵{% endif %}
+                            </span>
+                            {% if fixture.status in ('completed', 'in_progress') %}
+                            <span class="live-score-inline">{{ fixture.home_score if fixture.home_score is not none else '-' }}-{{ fixture.away_score if fixture.away_score is not none else '-' }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="time">{{ fixture.scheduled_datetime.strftime('%H:%M') }}</div>
-                </div>
 
-                <div class="fixture-status">
-                    <span class="badge {% if fixture.status == 'completed' %}completed{% elif fixture.status == 'in_progress' %}in-progress{% endif %}">
-                        {% if fixture.status == 'completed' %}✓ Final{% elif fixture.status == 'in_progress' %}🔴 Live{% else %}🔵 Not Started{% endif %}
-                    </span>
-                </div>
+                    {% set user_prediction = user_predictions.get(fixture.id) %}
 
-                {% if fixture.status == 'completed' or fixture.status == 'in_progress' %}
-                <div class="live-score">
-                    <span class="score">
-                        {{ fixture.home_score if fixture.home_score is not none else '-' }}
-                        -
-                        {{ fixture.away_score if fixture.away_score is not none else '-' }}
-                    </span>
-                </div>
-                {% endif %}
-
-                {% set user_prediction = user_predictions.get(fixture.id) %}
-
-                {% if not fixture.is_kickoff_passed() %}
-                <form method="POST" class="prediction-form">
-                    <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
-
-                    <div class="score-inputs">
-                        <div class="input-group">
+                    {% if not fixture.is_kickoff_passed() %}
+                    <div class="prediction-entry">
+                        <form method="POST" class="prediction-form-compact">
+                            <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
                             <input type="number" name="home_score" min="0" max="99" placeholder="0"
                                    value="{{ user_prediction.predicted_home_score if user_prediction else '' }}" required>
                             <span class="dash">-</span>
                             <input type="number" name="away_score" min="0" max="99" placeholder="0"
                                    value="{{ user_prediction.predicted_away_score if user_prediction else '' }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-small">
-                            {% if user_prediction %}Update{% else %}Predict{% endif %}
-                        </button>
-                    </div>
-                </form>
-
-                {% if user_prediction %}
-                <p class="prediction-status">
-                    Your prediction: <strong>{{ user_prediction.predicted_home_score }}-{{ user_prediction.predicted_away_score }}</strong>
-                    <small>(updated {{ user_prediction.predicted_at.strftime('%H:%M') }})</small>
-                </p>
-                {% endif %}
-
-                {% else %}
-
-                {% set opponents = opponent_predictions.get(fixture.id, []) %}
-                <div class="result-comparison">
-                    <div class="comparison-row">
-                        <span class="comp-label">You</span>
+                            <button type="submit" class="btn btn-small">
+                                {% if user_prediction %}Update{% else %}Predict{% endif %}
+                            </button>
+                        </form>
                         {% if user_prediction %}
-                        <span class="comp-score">{{ user_prediction.predicted_home_score }}-{{ user_prediction.predicted_away_score }}</span>
-                        {% else %}
-                        <span class="comp-score no-pred">—</span>
+                        <span class="prediction-saved">Saved {{ user_prediction.predicted_home_score }}-{{ user_prediction.predicted_away_score }}</span>
                         {% endif %}
                     </div>
-                    {% for opp in opponents %}
-                    <div class="comparison-row">
-                        <span class="comp-label">{{ opp.user.username }}</span>
-                        <span class="comp-score">{{ opp.predicted_home_score }}-{{ opp.predicted_away_score }}</span>
-                    </div>
-                    {% endfor %}
-                    {% if fixture.status == 'completed' and user_prediction and user_prediction.points_earned is not none %}
-                    <div class="comparison-row points-row">
-                        <span class="comp-label">Points</span>
-                        <span class="comp-score points-value">{{ user_prediction.points_earned }}
-                            {% set breakdown = user_prediction.get_points_breakdown() %}
-                            <span class="breakdown">({% if breakdown.exact %}exact{% elif breakdown.diff %}goal diff{% elif breakdown.result %}result{% else %}none{% endif %})</span>
+
+                    {% else %}
+
+                    {% set opponents = opponent_predictions.get(fixture.id, []) %}
+                    <div class="picks-row">
+                        <span class="pick-item">
+                            <span class="pick-name">You</span>
+                            {% if user_prediction %}
+                            <span class="pick-score">{{ user_prediction.predicted_home_score }}-{{ user_prediction.predicted_away_score }}</span>
+                            {% else %}
+                            <span class="pick-score no-pred">—</span>
+                            {% endif %}
                         </span>
+                        {% for opp in opponents %}
+                        <span class="pick-item">
+                            <span class="pick-name">{{ opp.user.username }}</span>
+                            <span class="pick-score">{{ opp.predicted_home_score }}-{{ opp.predicted_away_score }}</span>
+                        </span>
+                        {% endfor %}
+                        {% if fixture.status == 'completed' and user_prediction and user_prediction.points_earned is not none %}
+                        <span class="pick-item points-item">
+                            <span class="pick-name">Pts</span>
+                            <span class="pick-score pts-val">{{ user_prediction.points_earned }}
+                                {% set bd = user_prediction.get_points_breakdown() %}
+                                <span class="pts-breakdown">({% if bd.exact %}exact{% elif bd.diff %}diff{% elif bd.result %}result{% else %}none{% endif %})</span>
+                            </span>
+                        </span>
+                        {% endif %}
                     </div>
+
                     {% endif %}
                 </div>
-
-                {% endif %}
+                {% endfor %}
             </div>
             {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <p>No fixtures found. <a href="{{ url_for('admin') }}">Sync fixtures in admin</a></p>
         </div>
-        {% endfor %}
-    {% else %}
-    <div class="empty-state">
-        <p>No fixtures found. <a href="{{ url_for('admin') }}">Click here to sync fixtures</a></p>
+        {% endif %}
     </div>
-    {% endif %}
+
+    <!-- Right: leaderboard -->
+    <div class="leaderboard-sidebar">
+        <h2>🏆 Leaderboard</h2>
+        {% if leaderboard %}
+        <table class="leaderboard-table compact">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Player</th>
+                    <th>Pts</th>
+                    <th title="Exact / Goal Diff / Result">E&nbsp;/&nbsp;D&nbsp;/&nbsp;R</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in leaderboard %}
+                <tr class="{% if entry.user.username == current_user.username %}current-user{% endif %}">
+                    <td class="rank">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}</td>
+                    <td class="player-name">{{ entry.user.username }}{% if entry.user.username == current_user.username %} <span class="you-badge">you</span>{% endif %}</td>
+                    <td class="total-points"><strong>{{ entry.total_points }}</strong></td>
+                    <td class="breakdown-cell">{{ entry.exact_correct }}&nbsp;/&nbsp;{{ entry.diff_correct }}&nbsp;/&nbsp;{{ entry.result_correct }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="scoring-key">
+            <span>5pts exact</span><span>3pts goal diff</span><span>2pts result</span>
+        </div>
+        {% else %}
+        <p class="no-data">No predictions yet</p>
+        {% endif %}
+    </div>
+
 </div>
-
-<style>
-    .result-comparison {
-        margin-top: 6px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .comparison-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.9em;
-    }
-
-    .comp-label {
-        color: #888;
-        min-width: 80px;
-        font-size: 0.85em;
-    }
-
-    .comp-score {
-        font-weight: 600;
-    }
-
-    .comp-score.no-pred {
-        color: #bbb;
-        font-weight: normal;
-    }
-
-    .points-row .comp-score {
-        color: #2a9d2a;
-    }
-
-    .breakdown {
-        font-size: 0.8em;
-        color: #888;
-        font-weight: normal;
-    }
-</style>
 {% endblock %}

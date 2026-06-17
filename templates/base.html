@@ -21,10 +21,7 @@
         {% if current_user %}
         <nav class="tabs">
             <a href="{{ url_for('predictions') }}" class="tab {% if request.endpoint == 'predictions' %}active{% endif %}">
-                📋 Predictions & Results
-            </a>
-            <a href="{{ url_for('leaderboard') }}" class="tab {% if request.endpoint == 'leaderboard' %}active{% endif %}">
-                🏆 Leaderboard
+                ⚽ Predictions
             </a>
             <a href="{{ url_for('admin') }}" class="tab {% if request.endpoint == 'admin' %}active{% endif %}">
                 ⚙️ Admin

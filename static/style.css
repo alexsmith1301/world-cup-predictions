@@ -344,56 +344,80 @@ select:focus {
 
 /* ==================== Predictions Page ====================*/
 
-.predictions-header {
+/* Two-column layout */
+.predictions-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 24px;
+    align-items: start;
+}
+
+.fixtures-col {
+    min-width: 0;
+}
+
+.col-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
-.date-group {
-    margin-bottom: 30px;
-}
-
-.date-header {
-    padding: 12px 0;
-    margin-bottom: 15px;
-    border-bottom: 2px solid var(--border-color);
-    color: var(--text-color);
+.col-header h2 {
     font-size: 18px;
 }
 
+.date-group {
+    margin-bottom: 20px;
+}
+
+.date-header {
+    padding: 6px 0;
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-color);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Compact fixture cards */
 .fixture-card {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 15px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
     box-shadow: var(--shadow);
-    transition: all 0.3s;
 }
 
-.fixture-card:hover {
-    box-shadow: var(--shadow-lg);
+.fixture-card.locked {
+    border-left: 3px solid var(--border-color);
 }
 
-.fixture-header {
+/* Single row: teams + meta */
+.fixture-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    gap: 8px;
 }
 
 .teams {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex: 1;
+    min-width: 0;
 }
 
 .team {
     font-weight: 600;
-    font-size: 16px;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .team.home {
@@ -408,140 +432,175 @@ select:focus {
 
 .vs {
     color: var(--text-light);
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.fixture-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .time {
     color: var(--text-light);
+    font-size: 12px;
+}
+
+.live-score-inline {
+    font-weight: 700;
     font-size: 14px;
-    min-width: 60px;
-    text-align: right;
-}
-
-.fixture-status {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.live-score {
-    text-align: center;
-    margin: 15px 0;
-}
-
-.score {
-    font-size: 36px;
-    font-weight: bold;
     color: var(--primary-color);
 }
 
-.prediction-form {
-    display: flex;
-    gap: 12px;
-    align-items: flex-end;
-    margin: 15px 0;
-}
-
-.score-inputs {
-    display: flex;
-    gap: 12px;
-    align-items: flex-end;
-}
-
-.input-group {
+/* Prediction entry row */
+.prediction-entry {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid var(--border-color);
 }
 
-.input-group input {
-    width: 60px;
-    padding: 8px;
+.prediction-form-compact {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.prediction-form-compact input[type="number"] {
+    width: 44px;
+    padding: 4px 6px;
     text-align: center;
-}
-
-.input-group .dash {
-    color: var(--text-light);
-    font-weight: bold;
-}
-
-.prediction-status {
     font-size: 13px;
+}
+
+.prediction-form-compact .dash {
     color: var(--text-light);
-    margin-top: 10px;
-}
-
-.prediction-locked {
-    background-color: #fef3c7;
-    border: 1px solid #fcd34d;
-    color: #92400e;
-    padding: 12px;
-    border-radius: var(--radius);
-    margin: 12px 0;
-    text-align: center;
-}
-
-.result-comparison {
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 12px;
-    margin-top: 12px;
-}
-
-.comparison-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.comparison-item:last-child {
-    border-bottom: none;
-}
-
-.comparison-item.points {
-    background-color: #ecfdf5;
-    margin: 8px 0;
-    padding: 8px;
-    border-radius: var(--radius);
-}
-
-.comparison-item .label {
-    color: var(--text-light);
-    font-weight: 500;
-}
-
-.comparison-item .prediction,
-.comparison-item .result {
     font-weight: bold;
-    font-size: 16px;
 }
 
-.comparison-item .points-value {
-    font-size: 20px;
-    font-weight: bold;
+.prediction-saved {
+    font-size: 12px;
     color: var(--success-color);
 }
 
-.comparison-item .breakdown {
-    font-size: 12px;
-    color: var(--text-light);
-    margin-left: 8px;
+/* Picks row (locked fixtures) */
+.picks-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid var(--border-color);
 }
 
-.no-prediction {
+.pick-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.pick-name {
     color: var(--text-light);
-    font-style: italic;
-    padding: 12px;
+}
+
+.pick-score {
+    font-weight: 600;
+}
+
+.pick-score.no-pred {
+    color: #bbb;
+    font-weight: normal;
+}
+
+.points-item .pts-val {
+    color: var(--success-color);
+}
+
+.pts-breakdown {
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: normal;
 }
 
 .empty-state {
     text-align: center;
     padding: 40px 20px;
     color: var(--text-light);
+}
+
+/* ==================== Leaderboard Sidebar ====================*/
+
+.leaderboard-sidebar {
+    position: sticky;
+    top: 16px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+}
+
+.leaderboard-sidebar h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+
+.leaderboard-table.compact th,
+.leaderboard-table.compact td {
+    padding: 7px 8px;
+    font-size: 13px;
+}
+
+.leaderboard-table.compact .rank {
+    font-size: 14px;
+    min-width: 28px;
+}
+
+.leaderboard-table.compact .total-points {
+    font-size: 14px;
+}
+
+.breakdown-cell {
+    color: var(--text-light);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.you-badge {
+    display: inline-block;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    vertical-align: middle;
+}
+
+.scoring-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.scoring-key span {
+    font-size: 11px;
+    color: var(--text-light);
+    background-color: var(--bg-color);
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.no-data {
+    color: var(--text-light);
+    font-size: 13px;
 }
 
 /* ==================== Leaderboard Page ====================*/
@@ -739,16 +798,14 @@ footer a:hover {
         flex-wrap: wrap;
     }
 
-    .prediction-form {
-        flex-direction: column;
+    /* Stack columns on mobile */
+    .predictions-layout {
+        grid-template-columns: 1fr;
     }
 
-    .score-inputs {
-        width: 100%;
-    }
-
-    .input-group input {
-        flex: 1;
+    .leaderboard-sidebar {
+        position: static;
+        order: -1;
     }
 
     .leaderboard-table {
@@ -766,27 +823,5 @@ footer a:hover {
 
     .sync-buttons .btn {
         width: 100%;
-    }
-
-    .fixture-header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
-    }
-
-    .teams {
-        width: 100%;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .team.home,
-    .team.away {
-        text-align: left;
-    }
-
-    .time {
-        width: 100%;
-        text-align: left;
     }
 }

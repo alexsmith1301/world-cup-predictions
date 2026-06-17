@@ -163,12 +163,15 @@ def predictions():
             fixtures_by_date[date_key] = []
         fixtures_by_date[date_key].append(fixture)
 
+    leaderboard_data = get_leaderboard()
+
     return render_template(
         'predictions.html',
         fixtures_by_date=fixtures_by_date,
         user_predictions=user_predictions,
         opponent_predictions=opponent_predictions,
-        user=user
+        user=user,
+        leaderboard=leaderboard_data,
     )
 
 # ==================== Leaderboard Routes ====================
