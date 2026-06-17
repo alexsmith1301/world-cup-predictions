@@ -5,11 +5,12 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     """Base configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{os.path.join(basedir, "predictions.db")}'
+    _db_url = os.environ.get('DATABASE_URL') or f'sqlite:///{os.path.join(basedir, "predictions.db")}'
+    SQLALCHEMY_DATABASE_URI = _db_url.replace('postgres://', 'postgresql://', 1)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
-    SESSION_COOKIE_SECURE = False  # Set to True if using HTTPS
+    SESSION_COOKIE_SECURE = bool(os.environ.get('RAILWAY_ENVIRONMENT'))
     SESSION_COOKIE_HTTPONLY = True
 
     # API Configuration
