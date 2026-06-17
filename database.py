@@ -15,6 +15,11 @@ def _run_migrations(app):
                 conn.commit()
             except Exception:
                 pass  # Column already exists
+            try:
+                conn.execute(db.text('ALTER TABLE fixtures ADD COLUMN kickoff_reminder_sent BOOLEAN DEFAULT 0'))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists
 
 def init_db(app):
     """Initialize the database"""

@@ -368,6 +368,70 @@ def set_whatsapp(user_id):
     db.session.commit()
     return redirect(url_for('admin'))
 
+@app.route('/admin/send-kickoff-reminders', methods=['POST'])
+@login_required
+def send_kickoff_reminders():
+    user = get_current_user()
+    if user.username not in ['Alex']:
+        return jsonify({'error': 'Access denied'}), 403
+
+    from datetime import timedelta
+    from models import User as U, Fixture as F, Prediction as P
+    from whatsapp import send_whatsapp
+
+    now = datetime.utcnow()
+    # Find upcoming fixtures in the next 3 hours that haven't had a reminder sent
+    fixtures = (
+        F.query
+        .filter(
+            F.scheduled_datetime >= now,
+            F.scheduled_datetime <= now + timedelta(hours=3),
+            F.status == 'not_started',
+            F.kickoff_reminder_sent == False,
+        )
+        .order_by(F.scheduled_datetime)
+        .all()
+    )
+
+    if not fixtures:
+        flash('No upcoming fixtures needing a reminder in the next 3 hours', 'error')
+        return redirect(url_for('admin'))
+
+    wa_users = U.query.filter(U.whatsapp_number.isnot(None)).all()
+    if not wa_users:
+        flash('No users have WhatsApp numbers set', 'error')
+        return redirect(url_for('admin'))
+
+    sent = 0
+    for f in fixtures:
+        kickoff_bst = (f.scheduled_datetime + timedelta(hours=1)).strftime('%H:%M BST')
+        for u in wa_users:
+            pred = P.query.filter_by(user_id=u.id, fixture_id=f.id).first()
+            if pred:
+                msg = (
+                    f"⏰ Kick-off reminder\n\n"
+                    f"{f.home_team} v {f.away_team}  {kickoff_bst}\n\n"
+                    f"Your prediction: {pred.predicted_home_score}-{pred.predicted_away_score}"
+                )
+            else:
+                msg = (
+                    f"⏰ Kick-off reminder\n\n"
+                    f"{f.home_team} v {f.away_team}  {kickoff_bst}\n\n"
+                    f"No prediction yet!\nReply: {f.home_team} 2-1 {f.away_team}"
+                )
+            try:
+                send_whatsapp(u.whatsapp_number, msg)
+                sent += 1
+            except Exception as e:
+                flash(f'Failed to send to {u.username}: {e}', 'error')
+
+        f.kickoff_reminder_sent = True
+        db.session.commit()
+
+    flash(f'Sent {sent} kickoff reminder{"s" if sent != 1 else ""}', 'success')
+    return redirect(url_for('admin'))
+
+
 @app.route('/admin/export-csv')
 @login_required
 def export_csv():

@@ -16,6 +16,9 @@
                 <button type="submit" class="btn btn-primary">🔄 Sync Live Scores</button>
             </form>
             <a href="{{ url_for('export_csv') }}" class="btn btn-secondary">💾 Export as CSV</a>
+            <form method="POST" action="{{ url_for('send_kickoff_reminders') }}" class="inline-form">
+                <button type="submit" class="btn btn-secondary">⏰ Send Kickoff Reminders Now</button>
+            </form>
         </div>
     </div>
 

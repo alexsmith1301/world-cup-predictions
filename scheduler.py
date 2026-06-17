@@ -76,9 +76,8 @@ def _morning_digest_job(app):
 
         fixture_lines = ["⚽ Today's Fixtures\n"]
         for f in upcoming:
-            fixture_lines.append(
-                f"{f.home_team} v {f.away_team}  {f.scheduled_datetime.strftime('%H:%M')} UTC"
-            )
+            kickoff_bst = (f.scheduled_datetime + timedelta(hours=1)).strftime('%H:%M BST')
+            fixture_lines.append(f"{f.home_team} v {f.away_team}  {kickoff_bst}")
 
         leaderboard = get_leaderboard()
         table_lines = ["\n🏆 Leaderboard\n"]
@@ -96,16 +95,20 @@ def _morning_digest_job(app):
 
 
 def _pre_kickoff_job(app):
-    """Every 30 min: per-user reminder for fixtures kicking off in ~1 hour."""
+    """Every 30 min: per-user reminder for fixtures kicking off in ~1 hour.
+
+    Uses a 90-minute window (30–120 min before kickoff) with a kickoff_reminder_sent
+    flag to guarantee delivery regardless of when the scheduler happened to start.
+    The wide window ensures a 30-minute interval always catches every fixture.
+    """
     with app.app_context():
-        from models import User, Fixture, Prediction
+        from models import db, User, Fixture, Prediction
         from whatsapp import send_whatsapp
 
         now = datetime.utcnow()
-        # 20-minute window centred on 1 hour — narrower than the 30-min job interval
-        # so each fixture is caught exactly once
-        window_start = now + timedelta(minutes=50)
-        window_end = now + timedelta(minutes=70)
+        # Wide window: 30–120 min before kickoff. The flag prevents double-sends.
+        window_start = now + timedelta(minutes=30)
+        window_end = now + timedelta(minutes=120)
 
         fixtures = (
             Fixture.query
@@ -113,6 +116,7 @@ def _pre_kickoff_job(app):
                 Fixture.scheduled_datetime >= window_start,
                 Fixture.scheduled_datetime <= window_end,
                 Fixture.status == 'not_started',
+                Fixture.kickoff_reminder_sent == False,
             )
             .all()
         )
@@ -120,30 +124,34 @@ def _pre_kickoff_job(app):
             return
 
         users = User.query.filter(User.whatsapp_number.isnot(None)).all()
-        for user in users:
-            for f in fixtures:
+        for f in fixtures:
+            kickoff_bst = (f.scheduled_datetime + timedelta(hours=1)).strftime('%H:%M BST')
+            for user in users:
                 prediction = Prediction.query.filter_by(
                     user_id=user.id, fixture_id=f.id
                 ).first()
-                kickoff = f.scheduled_datetime.strftime('%H:%M UTC')
                 if prediction:
                     msg = (
-                        f"⏰ Kick-off in 1 hour\n\n"
-                        f"{f.home_team} v {f.away_team}  {kickoff}\n\n"
+                        f"⏰ Kick-off reminder\n\n"
+                        f"{f.home_team} v {f.away_team}  {kickoff_bst}\n\n"
                         f"Your prediction: "
                         f"{prediction.predicted_home_score}-{prediction.predicted_away_score}"
                     )
                 else:
                     msg = (
-                        f"⏰ Kick-off in 1 hour\n\n"
-                        f"{f.home_team} v {f.away_team}  {kickoff}\n\n"
+                        f"⏰ Kick-off reminder\n\n"
+                        f"{f.home_team} v {f.away_team}  {kickoff_bst}\n\n"
                         f"No prediction yet!\n"
-                        f"Reply e.g. {f.home_team} 2-1 {f.away_team}"
+                        f"Reply: {f.home_team} 2-1 {f.away_team}"
                     )
                 try:
                     send_whatsapp(user.whatsapp_number, msg)
                 except Exception as e:
                     logger.error("Pre-kickoff reminder failed for %s / %s: %s", user.username, f.home_team, e)
+
+            # Mark sent so subsequent job runs don't re-send
+            f.kickoff_reminder_sent = True
+            db.session.commit()
 
 
 def _post_match_job(app):

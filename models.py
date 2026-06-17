@@ -41,6 +41,7 @@ class Fixture(db.Model):
     away_score = db.Column(db.Integer, nullable=True)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     result_notification_sent = db.Column(db.Boolean, default=False, nullable=False)
+    kickoff_reminder_sent = db.Column(db.Boolean, default=False, nullable=False)
 
     predictions = db.relationship('Prediction', backref='fixture', lazy=True, cascade='all, delete-orphan')
 
