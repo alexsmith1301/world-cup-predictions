@@ -1,10 +1,26 @@
 from models import db, User
 from datetime import datetime
 
+def _run_migrations(app):
+    """Add new columns to existing tables (safe to run on every startup)."""
+    with app.app_context():
+        with db.engine.connect() as conn:
+            try:
+                conn.execute(db.text('ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(30)'))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists
+            try:
+                conn.execute(db.text('ALTER TABLE fixtures ADD COLUMN result_notification_sent BOOLEAN DEFAULT 0'))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists
+
 def init_db(app):
     """Initialize the database"""
     with app.app_context():
         db.create_all()
+        _run_migrations(app)
 
         # Create default users if they don't exist
         if User.query.filter_by(username='Alex').first() is None:

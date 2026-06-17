@@ -19,3 +19,8 @@ class Config:
     # Sync configuration
     FIXTURES_SYNC_INTERVAL = 3600  # 1 hour in seconds
     RESULTS_SYNC_INTERVAL = 300    # 5 minutes in seconds
+
+    # Twilio WhatsApp configuration
+    TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+    TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+    TWILIO_WHATSAPP_FROM = os.environ.get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886')

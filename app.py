@@ -21,6 +21,8 @@ from database import init_db
 from auth import login_required, get_current_user, login_user, logout_user
 from predictions import get_leaderboard, get_user_stats, calculate_points
 from api_client import LiveScoresAPIClient
+from whatsapp import whatsapp_bp, send_result_notification_for_fixture
+from scheduler import init_scheduler
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -30,8 +32,14 @@ db.init_app(app)
 with app.app_context():
     init_db(app)
 
+# Register WhatsApp blueprint
+app.register_blueprint(whatsapp_bp)
+
 # Initialize API client
 api_client = LiveScoresAPIClient()
+
+# Start background reminder scheduler
+init_scheduler(app)
 
 def sync_fixtures_on_startup():
     """Auto-sync World Cup fixtures on app startup if database has no real API fixtures"""
@@ -218,8 +226,10 @@ def sync_results():
     if user.username not in ['Alex']:
         return jsonify({'error': 'Access denied'}), 403
 
-    count = api_client.fetch_live_scores()
+    count, newly_completed = api_client.fetch_live_scores()
     api_client.log_sync('results', count)
+    for fixture in newly_completed:
+        send_result_notification_for_fixture(fixture)
     flash(f'Updated {count} fixtures with live scores', 'success')
     return redirect(url_for('admin'))
 
@@ -325,8 +335,34 @@ def set_score(fixture_id):
     # Update points for all predictions on this fixture
     from predictions import update_all_prediction_points_for_fixture
     update_all_prediction_points_for_fixture(fixture)
+    send_result_notification_for_fixture(fixture)
 
     flash(f'Score set for {fixture.home_team} vs {fixture.away_team}', 'success')
+    return redirect(url_for('admin'))
+
+@app.route('/admin/set-whatsapp/<int:user_id>', methods=['POST'])
+@login_required
+def set_whatsapp(user_id):
+    current = get_current_user()
+    if current.username not in ['Alex']:
+        return jsonify({'error': 'Access denied'}), 403
+
+    user = User.query.get(user_id)
+    if not user:
+        flash('User not found', 'error')
+        return redirect(url_for('admin'))
+
+    number = request.form.get('whatsapp_number', '').strip().replace('whatsapp:', '')
+    if number:
+        if not number.startswith('+'):
+            number = '+' + number
+        user.whatsapp_number = number
+        flash(f'WhatsApp number updated for {user.username}', 'success')
+    else:
+        user.whatsapp_number = None
+        flash(f'WhatsApp number cleared for {user.username}', 'success')
+
+    db.session.commit()
     return redirect(url_for('admin'))
 
 @app.route('/admin/export-csv')
@@ -384,4 +420,8 @@ def server_error(error):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--port', type=int, default=5001)
+    args = parser.parse_args()
+    app.run(debug=False, port=args.port)

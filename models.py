@@ -11,6 +11,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    whatsapp_number = db.Column(db.String(30), unique=True, nullable=True)
 
     predictions = db.relationship('Prediction', backref='user', lazy=True, cascade='all, delete-orphan')
 
@@ -39,6 +40,7 @@ class Fixture(db.Model):
     home_score = db.Column(db.Integer, nullable=True)
     away_score = db.Column(db.Integer, nullable=True)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    result_notification_sent = db.Column(db.Boolean, default=False, nullable=False)
 
     predictions = db.relationship('Prediction', backref='fixture', lazy=True, cascade='all, delete-orphan')
 

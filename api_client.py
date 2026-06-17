@@ -104,6 +104,7 @@ class LiveScoresAPIClient:
             return 0
 
         updated_count = 0
+        newly_completed = []
         for fixture_data in fixtures_data:
             api_id = str(fixture_data.get('id', ''))
             fixture = Fixture.query.filter_by(api_id=api_id).first()
@@ -131,10 +132,11 @@ class LiveScoresAPIClient:
 
                 if new_status == 'completed' and not was_completed:
                     update_all_prediction_points_for_fixture(fixture)
+                    newly_completed.append(fixture)
 
         db.session.commit()
         logger.info("Live score sync complete — %d fixtures updated", updated_count)
-        return updated_count
+        return updated_count, newly_completed
 
     def log_sync(self, sync_type, fixtures_updated, status='success', error_message=None):
         """Log a sync operation"""

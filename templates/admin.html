@@ -161,13 +161,15 @@
     </div>
 
     <div class="admin-section">
-        <h3>Users</h3>
+        <h3>Users &amp; WhatsApp</h3>
         <table class="users-table">
             <thead>
                 <tr>
                     <th>Username</th>
                     <th>Total Points</th>
                     <th>Predictions Made</th>
+                    <th>WhatsApp Number</th>
+                    <th>Update</th>
                 </tr>
             </thead>
             <tbody>
@@ -176,10 +178,27 @@
                     <td>{{ user.username }}</td>
                     <td><strong>{{ user.get_total_points() }}</strong></td>
                     <td>{{ user.predictions | length }}</td>
+                    <td>
+                        {% if user.whatsapp_number %}
+                            <span class="badge completed">{{ user.whatsapp_number }}</span>
+                        {% else %}
+                            <span style="color:#aaa;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('set_whatsapp', user_id=user.id) }}" class="inline-form">
+                            <input type="text" name="whatsapp_number"
+                                   placeholder="+447700900123"
+                                   value="{{ user.whatsapp_number or '' }}"
+                                   style="width:140px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:0.85em;">
+                            <button type="submit" class="btn btn-tiny">Save</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        <p style="font-size:0.8em;color:#888;margin-top:6px;">Leave blank and save to clear a number.</p>
     </div>
 </div>
 
